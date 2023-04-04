@@ -1,0 +1,81 @@
+@import "~bootstrap/dist/css/bootstrap.css";
+@import "./variable.scss";
+
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.bi {
+  color: $gray;
+
+  &::before {
+    font-weight: bold !important;
+  }
+}
+
+.matTable {
+  .mat-mdc-header-cell {
+    color: $heading;
+    font-size: 15px;
+  }
+  .mat-mdc-cell {
+    font-weight: 500;
+    font-size: 15px;
+    color: $content;
+  }
+}
+
+
+.block-text-container {
+  display: block;
+  width: fit-content;
+  text-align: center;
+  padding: 5px;
+  border-radius: 2px;
+}
+
+.t-bg {
+  &-info {
+    background-color: $bg-info;
+    @extend .block-text-container;
+  }
+  &-danger {
+    background-color: $bg-danger;
+    @extend .block-text-container;
+  }
+  &-warning {
+    background-color: $bg-warning;
+    @extend .block-text-container;
+  }
+  &-success {
+    background-color: $bg-success;
+    @extend .block-text-container;
+  }
+  &-secondary {
+    background-color: $bg-secondary;
+    @extend .block-text-container;
+  }
+}
+
+.t-text {
+  &-info {
+    color: $text-info;
+  }
+  &-danger {
+    color: $text-danger;
+  }
+  &-warning {
+    color: $text-warning;
+  }
+  &-success {
+    color: $text-success;
+  }
+  &-secondary {
+    color: $text-secondary;
+  }
+}
