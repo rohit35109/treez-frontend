@@ -19,6 +19,15 @@ body {
 }
 
 .matTable {
+
+  thead {
+    background-color: $light-color !important;
+  }
+
+  tbody {
+    border-bottom: 1px solid $light-border;
+  }
+
   .mat-mdc-header-cell {
     color: $heading;
     font-size: 15px;
@@ -28,9 +37,25 @@ body {
     font-size: 15px;
     color: $content;
   }
+
 }
 
-
+.relative-container {
+  position: relative;
+  .spinner-container {
+    position: absolute;
+    z-index: 999;
+    text-align: center;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #00000061;
+    div {
+      height: 100%;
+    }
+  }
+}
 .block-text-container {
   display: block;
   width: fit-content;

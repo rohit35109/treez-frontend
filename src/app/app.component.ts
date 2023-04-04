@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { TransactionPayload } from './interface/transaction.interface';
 import { TransactionStatus } from './enum/transaction.status.enum';
+import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
+import { HttpClient } from '@angular/common/http';
 
 const ELEMENT_DATA: TransactionPayload[] = [
   {
-    date: '10-10-2022T13:12:22',
+    date: '2022-12-10T02:10:00+00:00',
     gross_amount: 1000,
     status: TransactionStatus.INITIATED,
     customer: 'Eren Akichi',
@@ -13,7 +16,7 @@ const ELEMENT_DATA: TransactionPayload[] = [
     source: 'Payments',
   },
   {
-    date: '10-10-2022T13:12:22',
+    date: '2022-12-14T02:10:00+00:00',
     gross_amount: 98,
     status: TransactionStatus.CANCELLED,
     customer: 'Eren Akichi',
@@ -22,7 +25,7 @@ const ELEMENT_DATA: TransactionPayload[] = [
     source: 'E-commerce',
   },
   {
-    date: '10-10-2022T13:12:22',
+    date: '2022-12-01T02:10:00+00:00',
     gross_amount: 2500,
     status: TransactionStatus.AUTHORIZED,
     customer: 'Eren Akichi',
@@ -31,7 +34,7 @@ const ELEMENT_DATA: TransactionPayload[] = [
     source: 'In-Store',
   },
   {
-    date: '10-10-2022T13:12:22',
+    date: '2022-12-20T02:10:00+00:00',
     gross_amount: 10000,
     status: TransactionStatus.RETURNED,
     customer: 'Eren Akichi',
@@ -40,7 +43,7 @@ const ELEMENT_DATA: TransactionPayload[] = [
     source: 'In-Store',
   },
   {
-    date: '10-10-2022T13:12:22',
+    date: '2022-12-30T02:10:00+00:00',
     gross_amount: 700,
     status: TransactionStatus.SUCCESSFUL,
     customer: 'Eren Akichi',
@@ -55,7 +58,10 @@ const ELEMENT_DATA: TransactionPayload[] = [
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
+export class AppComponent implements AfterViewInit {
+
+  @ViewChild(MatSort) sort!: MatSort;
+
   public disaplyedColumns: string[] = [
     'date',
     'gross_amount',
@@ -66,5 +72,15 @@ export class AppComponent {
     'source',
   ];
 
-  public dataSource: TransactionPayload[] = ELEMENT_DATA;
+  public dataSource: MatTableDataSource<TransactionPayload>;
+
+  constructor(private http: HttpClient) {
+    this.dataSource = new MatTableDataSource();
+  }
+
+  ngAfterViewInit(): void {
+      this.dataSource.sort = this.sort;
+  }
+
+
 }
