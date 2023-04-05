@@ -14,18 +14,27 @@
               <span class="input-group-text">
                 <i class="bi bi-search"></i>
               </span>
-              <input type="text" placeholder="Search..." class="form-control">
+              <input type="text" #search placeholder="Search..." class="form-control">
             </div>
           </div>
         </div>
         <div class="col-4 text-end">
           <div class="actions">
-            <button class="btn btn-outline-secondary mx-2">
+            <button class="btn btn-outline-secondary mx-2" [matMenuTriggerFor]="options">
               <i class="bi bi-filter"></i>
-              Filter
+              Filter <span [hidden]="statusFilter.length <= 0" class="badge bg-secondary me-1">{{ statusFilter.length }}</span>
               <i class="bi bi-chevron-down"></i>
             </button>
-            <button class="btn btn-outline-secondary ms-2">
+            <mat-menu #options="matMenu">
+              <ng-container *ngFor="let option of optionsList">
+                <button mat-menu-item (click)="toggleSelectedStatusFilter(option)">
+                  <div class="mb-0" [ngClass]="{'t-text-info': statusFilter.includes(option)}">
+                    {{ option }}
+                  </div>
+                </button>
+              </ng-container>
+            </mat-menu>
+            <button (click)="exportToCSV()" class="btn btn-outline-secondary ms-2">
               <i class="bi bi-box-arrow-up"></i>
               Export
             </button>
@@ -98,20 +107,27 @@
             </tr>
 
           </table>
-          <div class="spinner-container">
-            <div class="d-flex justify-content-center align-items-center">
-              <mat-spinner class="m-auto" [diameter]="25"></mat-spinner>
+          <ng-container *ngIf="isLoading">
+            <div class="spinner-container">
+              <div class="d-flex justify-content-center align-items-center">
+                <mat-spinner class="m-auto" [diameter]="25"></mat-spinner>
+              </div>
             </div>
-          </div>
+          </ng-container>
         </div>
       </div>
       <div class="row justify-content-between align-items-center">
         <div class="col-4 align-self-center">
-          <p class="m-0">Viewing 1 to 15 of 15 results</p>
+          <p class="m-0">Viewing {{ totalRecords > 0 ? ((activePage - 1) * RECORDS_PER_PAGE) + 1 : 0}} 
+            to {{ (activePage * RECORDS_PER_PAGE) > totalRecords ? totalRecords : activePage * RECORDS_PER_PAGE }} of {{ totalRecords }} results</p>
         </div>
-        <div class="col-4 text-end">
-          <button class="btn btn-outline-secondary mx-1 previous">Previous</button>
-          <button class="btn btn-outline-secondary ms-1 next">Next</button>
+        <div *ngIf="totalRecords > RECORDS_PER_PAGE" class="col-4 text-end">
+          <button 
+            (click)="previousPage()"
+            *ngIf="activePage > 1" class="btn btn-outline-secondary mx-1 previous">Previous</button>
+          <button *ngIf="activePage <= MAXIMUM_PAGE"
+            (click)="nextPage()"
+            class="btn btn-outline-secondary ms-1 next">Next</button>
         </div>
       </div>
     </div>

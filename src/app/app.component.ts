@@ -1,67 +1,45 @@
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { TransactionPayload } from './interface/transaction.interface';
 import { TransactionStatus } from './enum/transaction.status.enum';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { HttpClient } from '@angular/common/http';
-
-const ELEMENT_DATA: TransactionPayload[] = [
-  {
-    date: '2022-12-10T02:10:00+00:00',
-    gross_amount: 1000,
-    status: TransactionStatus.INITIATED,
-    customer: 'Eren Akichi',
-    swifter_id: '2342WM',
-    external_id: 'T234S2',
-    source: 'Payments',
-  },
-  {
-    date: '2022-12-14T02:10:00+00:00',
-    gross_amount: 98,
-    status: TransactionStatus.CANCELLED,
-    customer: 'Eren Akichi',
-    swifter_id: '2342WM',
-    external_id: 'T234S2',
-    source: 'E-commerce',
-  },
-  {
-    date: '2022-12-01T02:10:00+00:00',
-    gross_amount: 2500,
-    status: TransactionStatus.AUTHORIZED,
-    customer: 'Eren Akichi',
-    swifter_id: '2342WM',
-    external_id: 'T234S2',
-    source: 'In-Store',
-  },
-  {
-    date: '2022-12-20T02:10:00+00:00',
-    gross_amount: 10000,
-    status: TransactionStatus.RETURNED,
-    customer: 'Eren Akichi',
-    swifter_id: '2342WM',
-    external_id: 'T234S2',
-    source: 'In-Store',
-  },
-  {
-    date: '2022-12-30T02:10:00+00:00',
-    gross_amount: 700,
-    status: TransactionStatus.SUCCESSFUL,
-    customer: 'Eren Akichi',
-    swifter_id: '2342WM',
-    external_id: 'T234S2',
-    source: 'E-commerce',
-  },
-];
+import { AngularCsv } from 'angular-csv-ext/dist/Angular-csv';
+import {
+  Subscription,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  fromEvent,
+  map,
+  tap,
+} from 'rxjs';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent implements AfterViewInit {
-
+export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild('search') searchFilter!: ElementRef;
 
+  private transactionApi: string = 'http://192.168.29.144:3000/transaction';
+  public RECORDS_PER_PAGE: number = 15;
+  public MAXIMUM_PAGE: number = 0;
+  public activePage: number = 1;
+  public totalRecords: number = 0;
+  public optionsList = Object.keys(TransactionStatus);
+  public statusFilter: Array<string> = [];
+
+  public isLoading: boolean = false;
   public disaplyedColumns: string[] = [
     'date',
     'gross_amount',
@@ -72,15 +50,128 @@ export class AppComponent implements AfterViewInit {
     'source',
   ];
 
+  public searchText: string = "";
   public dataSource: MatTableDataSource<TransactionPayload>;
+  public transactionData: TransactionPayload[] = [];
+  private Subscription: Subscription = new Subscription();
 
   constructor(private http: HttpClient) {
     this.dataSource = new MatTableDataSource();
   }
 
-  ngAfterViewInit(): void {
-      this.dataSource.sort = this.sort;
+  ngOnInit(): void {
+    this.getTransactions();
   }
 
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort;
 
+    // on search changes
+    this.initializeSearch();
+  }
+
+  initializeSearch() {
+    if (!this.searchFilter) return;
+
+    const search$ = fromEvent(this.searchFilter.nativeElement, 'keyup').pipe(
+      map((event: any) => event.target.value),
+      debounceTime(500),
+      tap((text) => {
+        this.searchText = text;
+      }),
+      distinctUntilChanged()
+    );
+
+    this.Subscription.add(
+      search$.subscribe({
+        next: () => {
+          this.getTransactions();
+        },
+      })
+    );
+  }
+
+  toggleSelectedStatusFilter(val: string) {
+    if (val === '') return;
+    const indexOfExistingSelection = this.statusFilter.findIndex(
+      (i) => i === val
+    );
+    indexOfExistingSelection >= 0
+      ? this.statusFilter.splice(indexOfExistingSelection, 1)
+      : this.statusFilter.push(val);
+    
+    this.getTransactions();
+  }
+
+  getTransactions() {
+    this.isLoading = true;
+    this.Subscription.add(
+      this.http
+        .get<TransactionPayload[]>(
+          `${this.transactionApi}?search=${this.searchText}&&status=${this.statusFilter.join(",")}`
+        )
+        .subscribe({
+          next: (response) => {
+            this.transactionData = response;
+            this.isLoading = false;
+            this.totalRecords = this.transactionData.length;
+            this.MAXIMUM_PAGE = Math.floor(
+              this.totalRecords / this.RECORDS_PER_PAGE
+            );
+            this.displayDataOnPaginationChange();
+          },
+          error: (err) => {
+            // error cases. Console will be removed in the production
+            console.log(err);
+            this.isLoading = false;
+          },
+        })
+    );
+  }
+
+  displayDataOnPaginationChange() {
+    const startIndex = (this.activePage - 1) * this.RECORDS_PER_PAGE;
+    const endIndex = startIndex + 15;
+    this.dataSource.data = [
+      ...this.transactionData.slice(startIndex, endIndex),
+    ];
+  }
+
+  nextPage() {
+    if (this.activePage > this.MAXIMUM_PAGE) return;
+    this.activePage++;
+    this.displayDataOnPaginationChange();
+  }
+
+  previousPage() {
+    if (this.activePage === 1) return;
+    this.activePage--;
+    this.displayDataOnPaginationChange();
+  }
+
+  exportToCSV() {
+    const options = {
+      fieldSeparator: ',',
+      quoteStrings: '"',
+      decimalseparator: '.',
+      showLabels: true,
+      useBom: true,
+      headers: [
+        'Date',
+        'Gross Amount',
+        'Status',
+        'Customer',
+        'Swifter Id',
+        'External Id',
+        'Source',
+      ],
+      useHeader: false,
+      nullToEmptyString: true,
+    };
+    new AngularCsv(this.transactionData, 'Transactions', options);
+  }
+
+  ngOnDestroy(): void {
+    this.Subscription.unsubscribe();
+  }
 }
