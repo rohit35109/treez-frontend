@@ -1,6 +1,7 @@
 import { TransactionStatus } from "../enum/transaction.status.enum";
 
 export interface TransactionPayload {
+  [key: string]: any;
   date: string;
   gross_amount: number; // in cents
   status: TransactionStatus;

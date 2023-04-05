@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { TransactionPayload } from './interface/transaction.interface';
 import { TransactionStatus } from './enum/transaction.status.enum';
-import { MatSort } from '@angular/material/sort';
+import { MatSort, Sort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { HttpClient } from '@angular/common/http';
 import { AngularCsv } from 'angular-csv-ext/dist/Angular-csv';
@@ -31,7 +31,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('search') searchFilter!: ElementRef;
 
-  private transactionApi: string = 'http://192.168.29.144:3000/transaction';
+  private transactionApi: string = 'http://localhost:3000/transaction';
   public RECORDS_PER_PAGE: number = 15;
   public MAXIMUM_PAGE: number = 0;
   public activePage: number = 1;
@@ -54,6 +54,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   public dataSource: MatTableDataSource<TransactionPayload>;
   public transactionData: TransactionPayload[] = [];
   private Subscription: Subscription = new Subscription();
+  private sortOptions: Sort = { active: "date", direction: "desc" };
 
   constructor(private http: HttpClient) {
     this.dataSource = new MatTableDataSource();
@@ -65,9 +66,30 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.dataSource.sort = this.sort;
-
-    // on search changes
     this.initializeSearch();
+  }
+
+  onSortChange(event: Sort) {
+    this.sortOptions = event;
+    this.displayDataOnPaginationChange();
+  }
+
+  calculateDataSort(event: Sort) {
+    const sortedData = [...this.transactionData.sort((a, b) => {
+      const aValue = a[event.active];
+      const bValue = b[event.active];
+
+      if (event.direction === 'asc') {
+        if (aValue < bValue) return -1;
+        if (aValue > bValue) return 1;
+      } else {
+        if (aValue > bValue) return -1;
+        if (aValue < bValue) return 1;
+      }
+      return 0;
+
+    })];
+    this.transactionData = [...sortedData];
   }
 
   initializeSearch() {
@@ -112,6 +134,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         )
         .subscribe({
           next: (response) => {
+            this.activePage = 1;
             this.transactionData = response;
             this.isLoading = false;
             this.totalRecords = this.transactionData.length;
@@ -132,6 +155,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   displayDataOnPaginationChange() {
     const startIndex = (this.activePage - 1) * this.RECORDS_PER_PAGE;
     const endIndex = startIndex + 15;
+    this.calculateDataSort(this.sortOptions);
     this.dataSource.data = [
       ...this.transactionData.slice(startIndex, endIndex),
     ];

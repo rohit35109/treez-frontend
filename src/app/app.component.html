@@ -44,7 +44,8 @@
       <div class="row">
         <div class="col-12 relative-container my-4">
           <table class="matTable" mat-table [dataSource]="dataSource"
-            matSort matSortActive="date" matSortDisableClear matSortDirection="desc">
+            matSort (matSortChange)="onSortChange($event)" matSortDisableClear>
+            <!--  matSortDisableClear matSortDirection="desc" matSortActive="date" -->
             <ng-container matColumnDef="date">
               <th mat-header-cell *matHeaderCellDef mat-sort-header>DATE</th>
               <td mat-cell *matCellDef="let element">
@@ -116,7 +117,7 @@
           </ng-container>
         </div>
       </div>
-      <div class="row justify-content-between align-items-center">
+      <div class="row justify-content-between align-items-center mb-4">
         <div class="col-4 align-self-center">
           <p class="m-0">Viewing {{ totalRecords > 0 ? ((activePage - 1) * RECORDS_PER_PAGE) + 1 : 0}} 
             to {{ (activePage * RECORDS_PER_PAGE) > totalRecords ? totalRecords : activePage * RECORDS_PER_PAGE }} of {{ totalRecords }} results</p>
